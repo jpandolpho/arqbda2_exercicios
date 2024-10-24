@@ -158,5 +158,36 @@ where job_id =(
 
 /*22. Liste o nome dos departamentos que têm funcionários com salários superiores
 a 10.000 e que também têm funcionários com salários inferiores a 5.000.*/
+select unique department_name
+from departments join employees using (department_id)
+where salary>10000 or salary<5000
+
+/*23. Liste o primeiro nome, o último nome e o salário dos funcionários que ganham
+mais que a média salarial e trabalham no mesmo departamento*/
+select e.first_name, e.last_name, e.salary
+from employees e
+where e.salary > (
+    select avg(salary)
+    from employees s
+    where s.department_id=e.department_id
+    group by department_id
+);
+
+/*24. Liste o nome dos departamentos que têm mais de 3 funcionários e onde o
+salário médio é superior a 8.000.*/
 select department_name
 from departments join employees using (department_id)
+group by(department_name)
+having count(department_name)>3 and avg(salary)>8000;
+
+/*25. Liste o nome dos funcionários que não são gerentes e que têm um salário
+superior ao salário médio de todos os gerentes.*/
+select first_name||' '||last_name full_name
+from employees
+where salary > (
+    select avg(salary)
+    from departments d join employees e on d.manager_id=e.employee_id
+) and employee_id not in (
+    select employee_id
+    from departments d join employees e on d.manager_id=e.employee_id
+);
