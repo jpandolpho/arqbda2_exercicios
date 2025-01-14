@@ -70,33 +70,76 @@ IS
     v_salary employees.salary%TYPE;
     v_sal_percapita employees.salary%TYPE;
     v_check employees.employee_id%TYPE;
+    application_error EXCEPTION;
 BEGIN
     SELECT employee_id INTO v_check
         FROM employees WHERE employee_id=emp_id;
-    IF v_check=emp_id THEN
-        SELECT salary INTO v_salary
-            FROM employees WHERE employee_id=v_check;
-        IF family_members>0 THEN
-            v_sal_percapita := v_salary/family_members;
-        ELSE
-            RAISE application_error;
-        END IF;
+    SELECT salary INTO v_salary
+        FROM employees WHERE employee_id=v_check;
+    IF family_members>0 THEN
+        v_sal_percapita := v_salary/family_members;
     ELSE
-        v_sal_percapita :=0;
-        RAISE no_data_found;
+        RAISE application_error;
     END IF;
     RETURN v_sal_percapita;
-/*EXCEPTION
+EXCEPTION
     WHEN NO_DATA_FOUND THEN
         DBMS_OUTPUT.PUT_LINE('Empregado inexistente.');
+        RETURN -1;
     WHEN application_error THEN
-        DBMS_OUTPUT.PUT_LINE('NÃºmeros negativos sÃ£o invÃ¡lidos.');
+        DBMS_OUTPUT.PUT_LINE('Numeros negativos sao invalidos.');
+        RETURN -1;
     WHEN ZERO_DIVIDE THEN
-        DBMS_OUTPUT.PUT_LINE('Erro: foi informado 0 membros para a famÃ­lia.');*/
+        DBMS_OUTPUT.PUT_LINE('Erro: foi informado 0 membros para a familia.');
+        RETURN -1;
 END;
 /
 
 BEGIN
-    DBMS_OUTPUT.PUT_LINE('O salÃ¡rio por membro da famÃ­lia Ã©: '||sal_family_member(100,0));
+    DBMS_OUTPUT.PUT_LINE('O salario por membro da familia e: '||sal_family_member(1,-1));
 END;
 /
+
+/*3. Elabore um procedimento para alterar o gerente de um departamento, passando o id do
+departamento e o id do empregado que será seu novo gerente.
+- Faça tratamento de exceção para todos os parâmetros, ou seja, verifique se os valores informados
+como parâmetros são válidos.
+- Um empregado somente pode ser gerente do departamento ao qual pertence. Caso o empregado
+pertença a outro departamento, exiba uma mensagem na tela dizendo que não é possível alterar o
+gerente, pois ele deve pertencer ao mesmo departamento que gerencia.*/
+
+CREATE OR REPLACE PROCEDURE alter_manager(
+    dept_id departments.department_id%TYPE,
+    emp_id employees.employee_id%TYPE)
+IS
+    v_dept departments.department_id%TYPE;
+    v_employee employees.employee_id%TYPE;
+    v_emp_dep employees.department_id%TYPE;
+    application_error EXCEPTION;
+BEGIN
+    SELECT department_id INTO v_dept
+        FROM departments
+        WHERE department_id=dept_id;
+    SELECT employee_id INTO v_employee
+        FROM employees
+        WHERE employee_id=emp_id;
+    SELECT department_id INTO v_emp_dep
+        FROM employees
+        WHERE employee_id=v_employee;
+    IF v_emp_dep=v_dept THEN
+        UPDATE departments
+            SET manager_id=v_employee
+            WHERE department_id=v_dept;
+        DBMS_OUTPUT.PUT_LINE('Alteração realizada com sucesso.');
+    ELSE
+        RAISE application_error;
+    END IF;
+EXCEPTION
+    WHEN no_data_found THEN
+        DBMS_OUTPUT.PUT_LINE('Parametros de execucao invalidos.');
+    WHEN application_error THEN
+        DBMS_OUTPUT.PUT_LINE('Empregado deve pertencer ao departamento para poder ser gerente dele.');
+END;
+/
+
+EXEC alter_manager(80,145);
