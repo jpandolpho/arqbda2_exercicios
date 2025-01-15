@@ -68,3 +68,71 @@ BEGIN
     CLOSE cur_dept_gt_salary;
 END;
 /
+
+------------------------------------------------------------------------------------------------------------
+--PLSQL_5_5_Using Cursors for Update.pdf
+/*1. Escreva um bloco PL/SQL que declare um cursor para todos os funcionários do
+departamento 80. Use o cursor para atualizar o salário de cada funcionário, dando a cada
+um deles um aumento de 10%*/
+DECLARE
+    CURSOR cur_update_salary IS
+        SELECT salary
+            FROM copy_employees 
+            WHERE department_id=80 FOR UPDATE NOWAIT;
+    v_emp_sal cur_update_salary%ROWTYPE;
+BEGIN
+    OPEN cur_update_salary;
+    LOOP
+        FETCH cur_update_salary INTO v_emp_sal;
+        EXIT WHEN cur_update_salary%NOTFOUND;
+        UPDATE copy_employees
+            SET salary = v_emp_sal.salary*1.1
+            WHERE CURRENT OF cur_update_salary;
+    END LOOP;
+    CLOSE cur_update_salary;
+END;
+/
+
+/*2. Escreva um bloco PL/SQL que declare um cursor para todos os funcionários que ganham
+menos de $10.000. Use o cursor para atualizar o salário de cada funcionário, dando a
+cada um deles um aumento de 20%*/
+DECLARE
+    CURSOR cur_raise_sal IS
+        SELECT salary
+            FROM copy_employees 
+            WHERE salary <10000 FOR UPDATE NOWAIT;
+    v_emp_sal cur_raise_sal%ROWTYPE;
+BEGIN
+    OPEN cur_raise_sal;
+    LOOP
+        FETCH cur_raise_sal INTO v_emp_sal;
+        EXIT WHEN cur_raise_sal%NOTFOUND;
+        UPDATE copy_employees
+            SET salary = v_emp_sal.salary*1.2
+            WHERE CURRENT OF cur_raise_sal;
+    END LOOP;
+    CLOSE cur_raise_sal;
+END;
+/
+
+/*3. Escreva um bloco PL/SQL que declare um cursor para todos os funcionários do
+departamento 50. Use o cursor para excluir todos os funcionários que ganham menos de
+$5.000.*/
+DECLARE
+    CURSOR cur_del_emp IS
+        SELECT employee_id
+            FROM copy_employees
+            WHERE department_id=50 AND salary<5000 FOR UPDATE NOWAIT;
+    v_emps cur_del_emp%ROWTYPE;
+BEGIN
+    OPEN cur_del_emp;
+    LOOP
+        FETCH cur_del_emp INTO v_emps;
+        EXIT WHEN cur_del_emp%NOTFOUND;
+        DELETE FROM copy_employees
+            WHERE CURRENT OF cur_del_emp;
+    END LOOP;
+    CLOSE cur_del_emp;
+END;
+/
+--ROLLBACK;
